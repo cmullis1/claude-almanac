@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Almanac</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --ring: rgba(11,11,11,0.10);
+  --wash: rgba(11,11,11,0.04);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --other: #b5b3ab;
+  --q0: #ecebe6; --q1: #b7d3f6; --q2: #6da7ec; --q3: #2a78d6; --q4: #1c5cab; --q5: #0d366b;
+  --mark: rgba(237,161,0,0.28);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.05);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --other: #5c5b56;
+    --q0: #242423; --q1: #104281; --q2: #1c5cab; --q3: #2a78d6; --q4: #5598e7; --q5: #9ec5f4;
+    --mark: rgba(201,133,0,0.35);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.05);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --other: #5c5b56;
+  --q0: #242423; --q1: #104281; --q2: #1c5cab; --q3: #2a78d6; --q4: #5598e7; --q5: #9ec5f4;
+  --mark: rgba(201,133,0,0.35);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 16px 64px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+h1 { font-size: 28px; line-height: 1.1; margin: 0; letter-spacing: -0.02em; font-weight: 700; }
+h1 span { color: var(--muted); font-weight: 400; }
+.sub { color: var(--ink-2); margin-top: 6px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 2px; }
+.seg button { border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--page); }
+select, input[type="search"], .btn {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--ring); border-radius: 8px; padding: 6px 10px;
+}
+.btn { cursor: pointer; }
+.btn:hover, .seg button:hover:not([aria-pressed="true"]) { background: var(--wash); }
+select { max-width: 220px; }
+
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+@media (min-width: 600px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1040px) { .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.tile, .card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; }
+.tile { padding: 14px 16px; }
+.tile .label { color: var(--ink-2); font-size: 12.5px; }
+.tile .value { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.2; margin-top: 4px; }
+.tile .note { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+.card { padding: 16px 18px 18px; margin-bottom: 12px; min-width: 0; }
+.card h2 { font-size: 15px; margin: 0; font-weight: 650; }
+.card .hint { color: var(--muted); font-size: 12.5px; margin: 2px 0 12px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 12px; }
+.grid2 > .card { margin-bottom: 0; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: 12px; margin-bottom: 12px; }
+.grid3 > .card { margin-bottom: 0; }
+.row-gap { height: 12px; }
+
+svg text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.scroll-x { overflow-x: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+.bars { display: grid; gap: 2px; }
+.bar {
+  display: grid; grid-template-columns: minmax(0, 38%) 1fr auto; align-items: center; gap: 10px;
+  padding: 3px 6px; margin: 0 -6px; border-radius: 6px; border: 0; background: none; color: inherit;
+  font: inherit; text-align: left; width: calc(100% + 12px);
+}
+button.bar { cursor: pointer; }
+.bar:hover, .bar:focus-visible { background: var(--wash); outline: none; }
+.grid3 .bar { grid-template-columns: minmax(0, 1.25fr) minmax(36px, 1fr) auto; }
+.bar .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: 13px; }
+.bar .track { height: 8px; position: relative; }
+.bar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--s1); border-radius: 0 4px 4px 0; min-width: 2px; }
+.bar .val { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 12.5px; text-align: right; min-width: 52px; }
+.empty { color: var(--muted); font-size: 13px; padding: 6px 0; }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.fact { border: 1px solid var(--ring); border-radius: 10px; padding: 12px 14px; }
+.fact .big { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+.fact .what { color: var(--ink-2); font-size: 12.5px; margin-top: 2px; }
+.fact .detail { color: var(--muted); font-size: 12px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { border: 1px solid var(--ring); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; color: var(--ink-2); }
+.chip b { color: var(--ink); font-weight: 600; }
+
+.explore-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.explore-top input { flex: 1 1 280px; padding: 8px 12px; font-size: 14px; }
+.count { color: var(--muted); font-size: 12.5px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 600; color: var(--ink-2); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--axis); cursor: pointer; white-space: nowrap; user-select: none; }
+th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+th[aria-sort="descending"]::after { content: " ↓"; }
+th[aria-sort="ascending"]::after { content: " ↑"; }
+td { padding: 7px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+tr.srow { cursor: pointer; }
+tr.srow:hover td { background: var(--wash); }
+td.title { max-width: 420px; }
+td.title .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.title .snip { color: var(--ink-2); font-size: 12px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.proj { color: var(--ink-2); white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+td.date { white-space: nowrap; color: var(--ink-2); }
+mark { background: var(--mark); color: inherit; border-radius: 2px; padding: 0 1px; }
+tr.detail td { background: var(--page); padding: 12px 14px 16px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--ink-2); font-size: 12.5px; margin-bottom: 10px; }
+.meta code { font-size: 12px; }
+.plist { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow: auto; border-left: 2px solid var(--grid); }
+.plist li { padding: 6px 0 6px 14px; white-space: pre-wrap; word-break: break-word; font-size: 13px; }
+.plist li time { display: block; color: var(--muted); font-size: 11.5px; }
+.more { margin-top: 10px; }
+.table-wrap { overflow-x: auto; }
+
+#tip {
+  position: fixed; z-index: 10; pointer-events: none; max-width: 300px;
+  background: var(--ink); color: var(--page); border-radius: 8px; padding: 7px 10px;
+  font-size: 12.5px; line-height: 1.4; opacity: 0; transition: opacity .08s;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+}
+#tip.on { opacity: 1; }
+#tip .tt { font-weight: 600; margin-bottom: 2px; }
+#tip .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+footer { color: var(--muted); font-size: 12px; margin-top: 18px; }
+@media (max-width: 560px) {
+  .tile .value { font-size: 23px; }
+  td.proj, th.proj-h { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Claude Almanac <span>· your Claude Code history</span></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="filters">
+      <div class="seg" id="range" role="group" aria-label="Time range">
+        <button data-r="7">7d</button><button data-r="30">30d</button><button data-r="90">90d</button><button data-r="365">1y</button><button data-r="all">All</button>
+      </div>
+      <select id="project" aria-label="Project"></select>
+      <button class="btn" id="theme" aria-label="Toggle theme">Theme: auto</button>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="card">
+    <h2>Activity</h2>
+    <div class="hint">Hours with a session in motion each day over the past year, you typing or Claude working. Parallel sessions count once; pauses over 5 minutes don't count.</div>
+    <div class="scroll-x"><div id="calendar"></div></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Weekly rhythm</h2>
+      <div class="hint">When you send prompts, by weekday and hour (local time).</div>
+      <div id="punch"></div>
+    </section>
+    <section class="card">
+      <h2>API-equivalent value</h2>
+      <div class="hint" id="spend-hint">What these tokens would cost at API list prices, by model family.</div>
+      <div id="spend"></div>
+    </section>
+  </div>
+  <div class="row-gap"></div>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Projects</h2>
+      <div class="hint">Hours in sessions. Click one to filter the whole page.</div>
+      <div id="projects"></div>
+    </section>
+    <section class="card">
+      <h2>Tools Claude reached for</h2>
+      <div class="hint">Calls across sessions and their subagents.</div>
+      <div id="tools"></div>
+    </section>
+  </div>
+  <div class="row-gap"></div>
+
+  <div class="grid3">
+    <section class="card"><h2>Skills</h2><div class="hint">Skill invocations</div><div id="skills"></div></section>
+    <section class="card"><h2>Subagents</h2><div class="hint">Agents spawned, by type</div><div id="agents"></div></section>
+    <section class="card"><h2>Shell commands</h2><div class="hint">First program in each command</div><div id="bash"></div></section>
+    <section class="card"><h2>Slash commands</h2><div class="hint">Commands you typed</div><div id="cmds"></div></section>
+    <section class="card"><h2>MCP servers</h2><div class="hint">Calls per connector</div><div id="mcp"></div></section>
+    <section class="card"><h2>Most-edited files</h2><div class="hint">Edit and Write calls</div><div id="files"></div></section>
+  </div>
+
+  <section class="card">
+    <h2>Fun facts</h2>
+    <div class="hint">Recomputed for the current filter.</div>
+    <div class="facts" id="facts"></div>
+  </section>
+
+  <section class="card" id="explorer">
+    <h2>Session explorer</h2>
+    <div class="hint">Search every prompt you've written. Click a session to read it back and grab its resume command.</div>
+    <div class="explore-top">
+      <input type="search" id="q" placeholder="Search prompts and titles…" aria-label="Search prompts and titles">
+      <span class="count" id="qcount"></span>
+    </div>
+    <div class="table-wrap"><table id="stable">
+      <thead><tr>
+        <th data-k="start" aria-sort="descending">Date</th>
+        <th data-k="title">Session</th>
+        <th data-k="project" class="proj-h">Project</th>
+        <th data-k="active" class="num">Active</th>
+        <th data-k="nprompts" class="num">Prompts</th>
+        <th data-k="cost" class="num">Value</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="more"><button class="btn" id="more" hidden>Show more</button></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const FAMS = ["Opus", "Sonnet", "Fable", "Haiku", "Other"];
+const FAM_VAR = { Opus: "--s1", Sonnet: "--s2", Fable: "--s3", Haiku: "--s4", Other: "--other" };
+const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const cssVar = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+const store = {
+  get(k) { try { return localStorage.getItem("almanac:" + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem("almanac:" + k, v); } catch {} },
+};
+
+// ---------- formatting ----------
+const nf = new Intl.NumberFormat();
+function fmtInt(n) { return nf.format(Math.round(n)); }
+function fmtHours(sec) {
+  const h = sec / 3600;
+  if (h >= 100) return fmtInt(h) + " h";
+  if (h >= 1) return h.toFixed(1).replace(/\.0$/, "") + " h";
+  return Math.round(sec / 60) + " min";
+}
+function fmtDur(sec) {
+  const m = Math.round(sec / 60);
+  if (m < 60) return m + "m";
+  return Math.floor(m / 60) + "h " + String(m % 60).padStart(2, "0") + "m";
+}
+function fmtMoney(x) {
+  if (x >= 1000) return "$" + fmtInt(x);
+  if (x >= 10) return "$" + x.toFixed(0);
+  return "$" + x.toFixed(2);
+}
+function fmtBig(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M";
+  if (n >= 1e4) return (n / 1e3).toFixed(0) + "K";
+  return fmtInt(n);
+}
+function parseDay(k) { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); }
+function dayKey(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function fmtDay(d, withYear) { return DOW[(d.getDay() + 6) % 7] + " " + MON[d.getMonth()] + " " + d.getDate() + (withYear ? ", " + d.getFullYear() : ""); }
+function fmtWhen(ms) {
+  const d = new Date(ms);
+  return MON[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear() + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
+// ---------- state & filtering ----------
+const TODAY = parseDay(DATA.today);
+const state = {
+  range: store.get("range") || "all",
+  project: "*",
+  q: "",
+  sort: { k: "start", dir: -1 },
+  shown: 40,
+  open: new Set(),
+};
+
+function cutoffKey() {
+  if (state.range === "all") return "0000-00-00";
+  return dayKey(addDays(TODAY, -(Number(state.range) - 1)));
+}
+function cutoffMs() { return state.range === "all" ? 0 : parseDay(cutoffKey()).getTime(); }
+
+function sessionsInScope(ignoreRange) {
+  const ck = ignoreRange ? 0 : cutoffMs();
+  return DATA.sessions.filter(s => (state.project === "*" || s.project === state.project) && s.end >= ck);
+}
+
+// Merge [start, end] second spans across sessions so parallel sessions count once,
+// then split the result at local midnights.
+function activity(ss, fromSec) {
+  const all = [];
+  for (const s of ss) for (const [a, b] of s.spans) if (b > fromSec) all.push([Math.max(a, fromSec), b]);
+  all.sort((x, y) => x[0] - y[0]);
+  const days = {};
+  let total = 0, cur = null;
+  const flush = ([a, b]) => {
+    total += b - a;
+    for (let t = a; t < b;) {
+      const d = new Date(t * 1000);
+      const next = Math.min(b, new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() / 1000);
+      const k = dayKey(d);
+      days[k] = (days[k] || 0) + (next - t);
+      t = next;
+    }
+  };
+  for (const iv of all) {
+    if (cur && iv[0] <= cur[1]) cur[1] = Math.max(cur[1], iv[1]);
+    else { if (cur) flush(cur); cur = [iv[0], iv[1]]; }
+  }
+  if (cur) flush(cur);
+  return { total, days };
+}
+
+function addInto(target, src) { for (const k in src) target[k] = (target[k] || 0) + src[k]; }
+function topN(obj, n) { return Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n); }
+
+function aggregate() {
+  const ck = cutoffKey(), cms = cutoffMs();
+  const ss = sessionsInScope(false);
+  const a = {
+    sessions: ss, active: 0, prompts: 0, tokens: 0, cost: 0, uncached: 0, lines: 0,
+    days: {}, dayPrompts: {}, dayCost: {}, how: {}, fam: {}, projects: {},
+    tools: {}, skills: {}, agents: {}, bash: {}, cmds: {}, mcp: {}, files: {},
+    toolCalls: 0, errors: 0, interrupts: 0, subagents: 0, agentSecs: 0,
+    replies: {}, usageRows: [],
+  };
+  const act = activity(ss, cms / 1000);
+  a.active = act.total; a.days = act.days;
+  const byProject = {};
+  for (const s of ss) (byProject[s.project] || (byProject[s.project] = [])).push(s);
+  for (const [name, group] of Object.entries(byProject)) {
+    a.projects[name] = { active: activity(group, cms / 1000).total, cost: 0, n: group.length };
+  }
+  for (const s of ss) {
+    let sCost = 0;
+    for (const [d, f, c, t, u] of s.usage) if (d >= ck) {
+      a.cost += c; a.tokens += t; a.uncached += u; sCost += c;
+      a.dayCost[d] = (a.dayCost[d] || 0) + c;
+      a.usageRows.push([d, f, c]);
+      a.fam[f] = (a.fam[f] || 0) + c;
+    }
+    for (const [ms, text] of s.prompts) if (ms >= cms) {
+      a.prompts++;
+      const k = dayKey(new Date(ms));
+      a.dayPrompts[k] = (a.dayPrompts[k] || 0) + 1;
+      const pd = new Date(ms), hk = ((pd.getDay() + 6) % 7) * 24 + pd.getHours();
+      a.how[hk] = (a.how[hk] || 0) + 1;
+      const short = text.trim().toLowerCase().replace(/[.!\\]+$/, "");
+      if (short.length <= 24 && !short.includes("\n")) a.replies[short] = (a.replies[short] || 0) + 1;
+    }
+    a.projects[s.project].cost += sCost;
+    addInto(a.tools, s.tools); addInto(a.skills, s.skills); addInto(a.agents, s.agents);
+    addInto(a.bash, s.bash); addInto(a.cmds, s.cmds); addInto(a.mcp, s.mcp);
+    for (const [f, n] of Object.entries(s.files)) {
+      const key = f + "\u0000" + s.path;
+      a.files[key] = (a.files[key] || 0) + n;
+    }
+    a.lines += s.lines; a.toolCalls += s.toolCalls; a.errors += s.errors; a.interrupts += s.interrupts;
+    a.subagents += s.subagents; a.agentSecs += s.agentSecs;
+  }
+  return a;
+}
+
+// ---------- tooltip ----------
+const tip = $("#tip");
+function showTip(el, x, y) {
+  tip.innerHTML = el.getAttribute("data-tip");
+  tip.classList.add("on");
+  const r = tip.getBoundingClientRect();
+  let left = x + 14, topY = y + 14;
+  if (left + r.width > innerWidth - 8) left = x - r.width - 14;
+  if (topY + r.height > innerHeight - 8) topY = y - r.height - 14;
+  tip.style.left = Math.max(8, left) + "px"; tip.style.top = Math.max(8, topY) + "px";
+}
+document.addEventListener("mousemove", e => {
+  const el = e.target.closest && e.target.closest("[data-tip]");
+  if (el) showTip(el, e.clientX, e.clientY); else tip.classList.remove("on");
+});
+document.addEventListener("focusin", e => {
+  const el = e.target.closest && e.target.closest("[data-tip]");
+  if (el) { const r = el.getBoundingClientRect(); showTip(el, r.left + r.width / 2, r.bottom); }
+});
+document.addEventListener("focusout", () => tip.classList.remove("on"));
+document.addEventListener("scroll", () => tip.classList.remove("on"), true);
+
+// ---------- KPI tiles ----------
+function renderKpis(a) {
+  const saved = a.uncached - a.cost;
+  const tiles = [
+    ["Time in sessions", fmtHours(a.active), a.sessions.length ? fmtInt(a.sessions.length) + " sessions, overlaps once" : "no sessions"],
+    ["Prompts you wrote", fmtInt(a.prompts), a.active ? (a.prompts / (a.active / 3600)).toFixed(1) + " per session hour" : ""],
+    ["Tokens processed", fmtBig(a.tokens), "incl. cache reads & writes"],
+    ["API-equivalent value", fmtMoney(a.cost), saved > 1 ? "caching saved " + fmtMoney(saved) : ""],
+    ["Lines Claude wrote", fmtBig(a.lines), "via Edit and Write"],
+    ["Subagents spawned", fmtInt(a.subagents), a.agentSecs ? fmtHours(a.agentSecs) + " of agent time" : ""],
+  ];
+  $("#kpis").innerHTML = tiles.map(([l, v, n]) =>
+    `<div class="tile"><div class="label">${esc(l)}</div><div class="value">${esc(v)}</div><div class="note">${esc(n)}</div></div>`).join("");
+}
+
+// ---------- calendar heatmap ----------
+const BINS = [[1, "under 15 min"], [900, "15 min – 1 h"], [3600, "1 – 2 h"], [7200, "2 – 4 h"], [14400, "4 h +"]];
+function bin(sec) { let b = 0; for (let i = 0; i < BINS.length; i++) if (sec >= BINS[i][0]) b = i + 1; return b; }
+
+function renderCalendar() {
+  // Always the past year, scoped to the project filter only.
+  const ss = sessionsInScope(true);
+  const days = activity(ss, 0).days, prompts = {}, cost = {};
+  for (const s of ss) {
+    for (const [d, , c] of s.usage) cost[d] = (cost[d] || 0) + c;
+    for (const [ms] of s.prompts) { const k = dayKey(new Date(ms)); prompts[k] = (prompts[k] || 0) + 1; }
+  }
+  const end = TODAY;
+  const start = addDays(end, -364 - ((end.getDay() + 6) % 7)); // Monday, ~1 year back
+  const cell = 12, gap = 3, left = 30, topPad = 18;
+  const weeks = Math.ceil((((end - start) / 86400000) + 1) / 7);
+  const W = left + weeks * (cell + gap), H = topPad + 7 * (cell + gap) + 30;
+  let svg = `<svg width="${W}" height="${H}" role="img" aria-label="Daily activity heatmap for the past year">`;
+  [0, 2, 4].forEach(r => svg += `<text x="0" y="${topPad + r * (cell + gap) + cell - 2}">${DOW[r]}</text>`);
+  let lastMonth = -1;
+  for (let w = 0; w < weeks; w++) {
+    const wd = addDays(start, w * 7);
+    if (wd.getMonth() !== lastMonth && wd.getDate() <= 7) {
+      svg += `<text x="${left + w * (cell + gap)}" y="11">${MON[wd.getMonth()]}</text>`;
+      lastMonth = wd.getMonth();
+    }
+    for (let r = 0; r < 7; r++) {
+      const d = addDays(start, w * 7 + r);
+      if (d > end) break;
+      const k = dayKey(d), v = days[k] || 0, b = bin(v);
+      const tipHtml = `<div class="tt">${esc(fmtDay(d, true))}</div>` + (v
+        ? `${esc(fmtDur(v))} in sessions · ${fmtInt(prompts[k] || 0)} prompts<br>${esc(fmtMoney(cost[k] || 0))} API value`
+        : "No activity");
+      svg += `<rect x="${left + w * (cell + gap)}" y="${topPad + r * (cell + gap)}" width="${cell}" height="${cell}" rx="3" fill="var(--q${b})" data-tip="${esc(tipHtml)}"/>`;
+    }
+  }
+  const ly = topPad + 7 * (cell + gap) + 12;
+  let lx = W - 5 * (cell + gap) - 70;
+  svg += `<text x="${lx - 4}" y="${ly + cell - 2}" text-anchor="end">Less</text>`;
+  for (let b = 0; b <= 5; b++) {
+    const label = b === 0 ? "No activity" : BINS[b - 1][1];
+    svg += `<rect x="${lx}" y="${ly}" width="${cell}" height="${cell}" rx="3" fill="var(--q${b})" data-tip="${esc(label)}"/>`;
+    lx += cell + gap;
+  }
+  svg += `<text x="${lx + 2}" y="${ly + cell - 2}">More</text></svg>`;
+  $("#calendar").innerHTML = svg;
+  const sc = $("#calendar").parentElement; sc.scrollLeft = sc.scrollWidth;
+}
+
+// ---------- weekly rhythm ----------
+function renderPunch(a) {
+  const el = $("#punch");
+  const width = Math.max(300, el.clientWidth);
+  const left = 34, gap = 2;
+  const cell = Math.max(8, Math.min(22, Math.floor((width - left) / 24) - gap));
+  const max = Math.max(1, ...Object.values(a.how));
+  const W = left + 24 * (cell + gap), H = 16 + 7 * (cell + gap);
+  let svg = `<svg width="${W}" height="${H}" role="img" aria-label="Prompts by weekday and hour">`;
+  [0, 6, 12, 18].forEach(h => svg += `<text x="${left + h * (cell + gap)}" y="10">${h === 0 ? "12a" : h === 12 ? "12p" : h < 12 ? h + "a" : (h - 12) + "p"}</text>`);
+  for (let r = 0; r < 7; r++) {
+    svg += `<text x="0" y="${16 + r * (cell + gap) + cell * 0.75}">${DOW[r]}</text>`;
+    for (let h = 0; h < 24; h++) {
+      const v = a.how[r * 24 + h] || 0;
+      const lvl = v <= 0 ? 0 : Math.min(5, 1 + Math.floor((v / max) * 5 * 0.999));
+      const hh = (x => (x % 12 || 12) + (x < 12 ? "am" : "pm"));
+      const t = `<div class="tt">${DOW[r]}s, ${hh(h)}–${hh((h + 1) % 24)}</div>${v ? fmtInt(v) + " prompt" + (v === 1 ? "" : "s") : "No prompts"}`;
+      svg += `<rect x="${left + h * (cell + gap)}" y="${16 + r * (cell + gap)}" width="${cell}" height="${cell}" rx="3" fill="var(--q${lvl})" data-tip="${esc(t)}"/>`;
+    }
+  }
+  el.innerHTML = svg + "</svg>";
+}
+
+// ---------- spend over time ----------
+function niceStep(max, ticks) {
+  const raw = max / ticks, p = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw) return m * p;
+  return 10 * p;
+}
+function roundTop(x, y, w, h, r) {
+  r = Math.min(r, h, w / 2);
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+function renderSpend(a) {
+  const el = $("#spend");
+  if (!a.usageRows.length) { el.innerHTML = `<div class="empty">No model usage in this range.</div>`; return; }
+  const firstKey = a.usageRows.reduce((m, r) => r[0] < m ? r[0] : m, "9999");
+  let start = state.range === "all" ? parseDay(firstKey) : parseDay(cutoffKey());
+  const spanDays = Math.round((TODAY - start) / 86400000) + 1;
+  const weekly = spanDays > 45;
+  if (weekly) start = addDays(start, -((start.getDay() + 6) % 7));
+  const step = weekly ? 7 : 1;
+  const buckets = [];
+  for (let d = new Date(start); d <= TODAY; d = addDays(d, step)) buckets.push({ d: new Date(d), f: {}, total: 0 });
+  const idx = k => Math.floor(Math.round((parseDay(k) - start) / 86400000) / step);
+  for (const [d, f, c] of a.usageRows) {
+    const b = buckets[idx(d)]; if (!b) continue;
+    b.f[f] = (b.f[f] || 0) + c; b.total += c;
+  }
+  const fams = FAMS.filter(f => a.fam[f] > 0);
+  const width = Math.max(300, el.clientWidth), H = 220, padL = 46, padB = 22, padT = 6;
+  const plotW = width - padL - 4, plotH = H - padB - padT;
+  const max = Math.max(...buckets.map(b => b.total), 0.01);
+  const st = niceStep(max, 4), top = Math.ceil(max / st) * st;
+  const y = v => padT + plotH - (v / top) * plotH;
+  const band = plotW / buckets.length, bw = Math.max(2, Math.min(28, band - 2));
+  let svg = `<svg width="${width}" height="${H}" role="img" aria-label="API-equivalent value per ${weekly ? "week" : "day"} by model family">`;
+  for (let v = 0; v <= top + 1e-9; v += st) {
+    svg += `<line x1="${padL}" x2="${width - 4}" y1="${y(v)}" y2="${y(v)}" stroke="var(${v === 0 ? "--axis" : "--grid"})" stroke-width="1"/>`;
+    svg += `<text x="${padL - 6}" y="${y(v) + 4}" text-anchor="end">${esc(fmtMoney(v).replace(".00", ""))}</text>`;
+  }
+  const labelEvery = Math.ceil(buckets.length / Math.max(2, Math.floor(plotW / 64)));
+  buckets.forEach((b, i) => {
+    const x = padL + i * band + (band - bw) / 2;
+    let acc = 0;
+    const present = fams.filter(f => b.f[f] > 0);
+    present.forEach((f, j) => {
+      const v = b.f[f], y0 = y(acc), y1 = y(acc + v);
+      let h = y0 - y1 - (j < present.length - 1 ? 2 : 0);
+      if (h > 0.5) {
+        svg += j === present.length - 1
+          ? `<path d="${roundTop(x, y1, bw, h, 4)}" fill="var(${FAM_VAR[f]})"/>`
+          : `<rect x="${x}" y="${y1 + 2}" width="${bw}" height="${h}" fill="var(${FAM_VAR[f]})"/>`;
+      }
+      acc += v;
+    });
+    if (i % labelEvery === 0) {
+      const lx = padL + i * band + band / 2, edge = lx > width - 28;
+      svg += `<text x="${edge ? width - 4 : lx}" y="${H - 6}" text-anchor="${edge ? "end" : "middle"}">${MON[b.d.getMonth()]} ${b.d.getDate()}</text>`;
+    }
+    const head = weekly ? "Week of " + fmtDay(b.d, true) : fmtDay(b.d, true);
+    const lines = fams.filter(f => b.f[f]).map(f => `<span class="sw" style="background:var(${FAM_VAR[f]})"></span>${f}: ${esc(fmtMoney(b.f[f]))}`).join("<br>");
+    const t = `<div class="tt">${esc(head)} · ${esc(fmtMoney(b.total))}</div>${lines || "No usage"}`;
+    svg += `<rect x="${padL + i * band}" y="${padT}" width="${band}" height="${plotH}" fill="transparent" data-tip="${esc(t)}"/>`;
+  });
+  svg += "</svg>";
+  const legend = `<div class="legend">${fams.map(f => `<span><i style="background:var(${FAM_VAR[f]})"></i>${f} <b>${esc(fmtMoney(a.fam[f]))}</b></span>`).join("")}</div>`;
+  el.innerHTML = legend + svg;
+  $("#spend-hint").textContent = `What these tokens would cost at API list prices, per ${weekly ? "week" : "day"}, by model family.`;
+}
+
+// ---------- bar lists ----------
+function barList(el, rows, opts = {}) {
+  if (!rows.length) { el.innerHTML = `<div class="empty">${esc(opts.empty || "Nothing here yet.")}</div>`; return; }
+  const max = Math.max(...rows.map(r => r.v));
+  el.innerHTML = `<div class="bars">${rows.map(r => {
+    const tag = r.click ? "button" : "div";
+    return `<${tag} class="bar"${r.click ? ` data-click="${esc(r.click)}"` : ""}${r.tip ? ` data-tip="${esc(r.tip)}"` : ""}${tag === "div" && r.tip ? ' tabindex="0"' : ""}>
+      <span class="name" title="${esc(r.full || r.label)}">${esc(r.label)}</span>
+      <span class="track"><span class="fill" style="width:${(r.v / max) * 100}%"></span></span>
+      <span class="val">${esc(r.fmt)}</span></${tag}>`;
+  }).join("")}</div>`;
+}
+function countList(id, obj, n, empty) {
+  // Plugin-qualified names ("superpowers:brainstorming") show their short form; the full name is on hover.
+  barList($(id), topN(obj, n).map(([k, v]) => ({ label: k.includes(":") && !k.startsWith("/") ? k.split(":").pop() : k, full: k, v, fmt: fmtInt(v) })), { empty });
+}
+function relPath(f, base) {
+  const fl = f.toLowerCase(), bl = (base || "").replace(/\\/g, "/").toLowerCase().replace(/\/$/, "");
+  if (bl && bl !== "(scratch)" && fl.startsWith(bl + "/")) return f.slice(bl.length + 1);
+  const parts = f.split("/");
+  return parts.length > 3 ? "…/" + parts.slice(-3).join("/") : f;
+}
+
+function renderLists(a) {
+  const projRows = Object.entries(a.projects).filter(([, p]) => p.active > 0 || p.cost > 0)
+    .sort((x, y) => y[1].active - x[1].active).slice(0, 14)
+    .map(([k, p]) => ({
+      label: k, v: p.active, fmt: fmtHours(p.active), click: k,
+      tip: `<div class="tt">${esc(k)}</div>${fmtInt(p.n)} sessions · ${esc(fmtHours(p.active))} · ${esc(fmtMoney(p.cost))}`,
+    }));
+  barList($("#projects"), projRows, { empty: "No sessions in this range." });
+  barList($("#tools"), topN(a.tools, 14).map(([k, v]) => ({ label: k, v, fmt: fmtInt(v) })));
+  countList("#skills", a.skills, 8, "No skills used.");
+  countList("#agents", a.agents, 8, "No subagents spawned.");
+  countList("#bash", a.bash, 8, "No shell commands.");
+  countList("#cmds", a.cmds, 8, "No slash commands.");
+  countList("#mcp", a.mcp, 8, "No MCP calls.");
+  barList($("#files"), topN(a.files, 8).map(([k, v]) => {
+    const [f, base] = k.split("\u0000");
+    return { label: f.split("/").pop(), full: f, v, fmt: fmtInt(v), tip: `<div class="tt">${esc(f.split("/").pop())}</div>${esc(relPath(f, base))}<br>${fmtInt(v)} edits` };
+  }), { empty: "No file edits." });
+}
+
+// ---------- fun facts ----------
+function renderFacts(a) {
+  const facts = [];
+  const dayKeys = Object.keys(a.days).filter(k => a.days[k] > 0).sort();
+  // streak
+  let best = 0, bestEnd = null, run = 0, prev = null;
+  for (const k of dayKeys) {
+    const d = parseDay(k);
+    run = prev && Math.round((d - prev) / 86400000) === 1 ? run + 1 : 1;
+    if (run > best) { best = run; bestEnd = d; }
+    prev = d;
+  }
+  if (best) facts.push([best + (best === 1 ? " day" : " days"), "Longest daily streak",
+    best > 1 ? "ended " + fmtDay(bestEnd, true) : ""]);
+  if (dayKeys.length) {
+    const busiest = dayKeys.reduce((m, k) => a.days[k] > a.days[m] ? k : m);
+    facts.push([fmtDur(a.days[busiest]), "Busiest day", fmtDay(parseDay(busiest), true)]);
+    const chatty = Object.keys(a.dayPrompts).reduce((m, k) => !m || a.dayPrompts[k] > a.dayPrompts[m] ? k : m, null);
+    if (chatty) facts.push([fmtInt(a.dayPrompts[chatty]), "Most prompts in a day", fmtDay(parseDay(chatty), true)]);
+  }
+  const hourTot = Array(24).fill(0); let night = 0, total = 0;
+  for (const [k, v] of Object.entries(a.how)) { const h = k % 24; hourTot[h] += v; total += v; if (h < 5) night += v; }
+  if (total) {
+    const peak = hourTot.indexOf(Math.max(...hourTot));
+    const hh = x => (x % 12 || 12) + (x < 12 ? " am" : " pm");
+    facts.push([hh(peak), "Your peak hour", Math.round(hourTot[peak] / total * 100) + "% of your prompts"]);
+    facts.push([Math.round(night / total * 100) + "%", "Night-owl share", "of prompts sent between midnight and 5 am"]);
+  }
+  const ss = a.sessions;
+  if (ss.length) {
+    const longest = ss.reduce((m, s) => s.active > m.active ? s : m);
+    facts.push([fmtDur(longest.active), "Longest session", longest.title]);
+    const costOf = s => s.usage.reduce((t, u) => t + u[2], 0);
+    const priciest = ss.reduce((m, s) => costOf(s) > costOf(m) ? s : m);
+    facts.push([fmtMoney(costOf(priciest)), "Priciest session", priciest.title]);
+  }
+  if (a.toolCalls) facts.push([(a.errors / a.toolCalls * 100).toFixed(1) + "%", "Tool calls that errored",
+    fmtInt(a.errors) + " of " + fmtInt(a.toolCalls)]);
+  facts.push([fmtInt(a.interrupts), "Times you hit Esc", "interrupted Claude mid-turn"]);
+  if (a.uncached > a.cost) facts.push([Math.round((1 - a.cost / a.uncached) * 100) + "%", "Saved by prompt caching",
+    fmtMoney(a.uncached) + " uncached vs " + fmtMoney(a.cost)]);
+  const replies = topN(a.replies, 8);
+  let html = facts.map(([big, what, detail]) =>
+    `<div class="fact"><div class="big">${esc(big)}</div><div class="what">${esc(what)}</div>${detail ? `<div class="detail" title="${esc(detail)}">${esc(detail)}</div>` : ""}</div>`).join("");
+  if (replies.length) html += `<div class="fact" style="grid-column: 1 / -1"><div class="what">Your go-to replies</div><div class="chips">${
+    replies.map(([k, v]) => `<span class="chip">“${esc(k)}” <b>×${fmtInt(v)}</b></span>`).join("")}</div></div>`;
+  $("#facts").innerHTML = html;
+}
+
+// ---------- session explorer ----------
+function highlight(text, q) {
+  if (!q) return esc(text);
+  const lower = text.toLowerCase(), out = [];
+  let i = 0, j;
+  while ((j = lower.indexOf(q, i)) >= 0) { out.push(esc(text.slice(i, j)), "<mark>", esc(text.slice(j, j + q.length)), "</mark>"); i = j + q.length; }
+  out.push(esc(text.slice(i)));
+  return out.join("");
+}
+function snippet(text, q) {
+  const one = text.replace(/\s+/g, " ");
+  const j = one.toLowerCase().indexOf(q);
+  const s = Math.max(0, j - 40);
+  return (s ? "…" : "") + one.slice(s, s + 160);
+}
+function renderExplorer() {
+  const q = state.q.trim().toLowerCase();
+  const cms = cutoffMs();
+  let rows = sessionsInScope(false).map(s => {
+    const hits = q ? s.prompts.filter(p => p[1].toLowerCase().includes(q)) : [];
+    return {
+      s, hits, start: s.start, title: s.title.toLowerCase(), project: s.project.toLowerCase(),
+      active: s.active, nprompts: s.prompts.filter(p => p[0] >= cms).length,
+      cost: s.usage.reduce((t, u) => t + u[2], 0),
+      titleHit: q && s.title.toLowerCase().includes(q),
+    };
+  });
+  if (q) rows = rows.filter(r => r.hits.length || r.titleHit);
+  const { k, dir } = state.sort;
+  rows.sort((x, y) => (x[k] < y[k] ? -1 : x[k] > y[k] ? 1 : 0) * dir);
+  const totalHits = rows.reduce((t, r) => t + r.hits.length, 0);
+  $("#qcount").textContent = q
+    ? `${fmtInt(totalHits)} matching prompt${totalHits === 1 ? "" : "s"} in ${fmtInt(rows.length)} session${rows.length === 1 ? "" : "s"}`
+    : `${fmtInt(rows.length)} sessions`;
+  document.querySelectorAll("#stable th").forEach(th => {
+    if (th.dataset.k === k) th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending"); else th.removeAttribute("aria-sort");
+  });
+  const html = [];
+  for (const r of rows.slice(0, state.shown)) {
+    const s = r.s;
+    html.push(`<tr class="srow" data-id="${esc(s.id)}" tabindex="0">
+      <td class="date">${esc(fmtWhen(s.start).replace(/ \d\d:\d\d$/, ""))}</td>
+      <td class="title"><div class="t">${highlight(s.title, q)}</div>${r.hits.length ? `<div class="snip">${highlight(snippet(r.hits[0][1], q), q)}${r.hits.length > 1 ? ` <span class="count">+${r.hits.length - 1} more</span>` : ""}</div>` : ""}</td>
+      <td class="proj">${esc(s.project)}</td>
+      <td class="num">${esc(fmtDur(s.active))}</td>
+      <td class="num">${fmtInt(r.nprompts)}</td>
+      <td class="num">${esc(fmtMoney(r.cost))}</td></tr>`);
+    if (state.open.has(s.id)) {
+      const ps = q && r.hits.length ? r.hits : s.prompts;
+      const resume = `cd "${s.cwd}"; claude --resume ${s.id}`;
+      html.push(`<tr class="detail"><td colspan="6">
+        <div class="meta">
+          <span>${esc(fmtWhen(s.start))} → ${esc(fmtWhen(s.end))}</span>
+          <span>${fmtInt(s.toolCalls)} tool calls · ${fmtInt(s.subagents)} subagents · ${esc(fmtBig(s.tokens))} tokens</span>
+          <span>${esc(s.entry || "")}</span>
+        </div>
+        <div class="meta"><code>${esc(resume)}</code><button class="btn" data-copy="${esc(resume)}">Copy resume command</button></div>
+        ${q && r.hits.length ? `<div class="count" style="margin-bottom:6px">Showing the ${fmtInt(r.hits.length)} matching prompt${r.hits.length === 1 ? "" : "s"}</div>` : ""}
+        <ol class="plist">${ps.map(([ms, t]) => `<li><time>${esc(fmtWhen(ms))}</time>${highlight(t, q)}</li>`).join("") || `<li class="count">No typed prompts in this session.</li>`}</ol>
+      </td></tr>`);
+    }
+  }
+  $("#stable tbody").innerHTML = html.join("") || `<tr><td colspan="6" class="empty">No sessions match.</td></tr>`;
+  const more = $("#more");
+  more.hidden = rows.length <= state.shown;
+  more.textContent = `Show more (${fmtInt(rows.length - state.shown)} left)`;
+}
+
+// ---------- wiring ----------
+function renderAll() {
+  document.querySelectorAll("#range button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.r === state.range)));
+  const a = aggregate();
+  renderKpis(a); renderCalendar(); renderPunch(a); renderSpend(a); renderLists(a); renderFacts(a); renderExplorer();
+}
+
+function initProjects() {
+  const act = {};
+  for (const s of DATA.sessions) act[s.project] = (act[s.project] || 0) + s.active;
+  const names = Object.keys(act).sort((x, y) => act[y] - act[x]);
+  $("#project").innerHTML = `<option value="*">All projects (${names.length})</option>` + names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+}
+
+function applyTheme(t) {
+  if (t === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  $("#theme").textContent = "Theme: " + t;
+}
+
+$("#range").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.range = b.dataset.r; store.set("range", state.range); state.shown = 40; renderAll();
+});
+$("#project").addEventListener("change", e => { state.project = e.target.value; state.shown = 40; renderAll(); });
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-click]");
+  if (c) { state.project = c.dataset.click; $("#project").value = state.project; renderAll(); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  const cp = e.target.closest("[data-copy]");
+  if (cp) {
+    navigator.clipboard?.writeText(cp.dataset.copy).then(() => { cp.textContent = "Copied"; setTimeout(() => cp.textContent = "Copy resume command", 1400); });
+    return;
+  }
+  const row = e.target.closest("tr.srow");
+  if (row) { const id = row.dataset.id; state.open.has(id) ? state.open.delete(id) : state.open.add(id); renderExplorer(); return; }
+  const th = e.target.closest("#stable th");
+  if (th) {
+    const k = th.dataset.k;
+    state.sort = { k, dir: state.sort.k === k ? -state.sort.dir : (k === "title" || k === "project" ? 1 : -1) };
+    renderExplorer();
+  }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.matches && e.target.matches("tr.srow")) e.target.click();
+  if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); }
+});
+let qTimer;
+$("#q").addEventListener("input", e => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => { state.q = e.target.value; state.shown = 40; state.open.clear(); renderExplorer(); }, 120);
+});
+$("#more").addEventListener("click", () => { state.shown += 40; renderExplorer(); });
+$("#theme").addEventListener("click", () => {
+  const order = ["auto", "light", "dark"];
+  const next = order[(order.indexOf(store.get("theme") || "auto") + 1) % 3];
+  store.set("theme", next); applyTheme(next);
+});
+let rTimer;
+addEventListener("resize", () => { clearTimeout(rTimer); rTimer = setTimeout(() => { const a = aggregate(); renderPunch(a); renderSpend(a); }, 150); });
+
+applyTheme(store.get("theme") || "auto");
+initProjects();
+const first = DATA.sessions.reduce((m, s) => Math.min(m, s.start), Infinity);
+$("#sub").textContent = `${fmtInt(DATA.sessions.length)} sessions since ${isFinite(first) ? fmtWhen(first).replace(/ \d\d:\d\d$/, "") : "-"} · built ${fmtWhen(DATA.generated)}`;
+$("#foot").textContent = `Built locally from ${fmtInt(DATA.files)} transcript files in ~/.claude/projects. Nothing in this page was sent anywhere. Value is an estimate at public API list prices, not what you paid.`;
+renderAll();
+</script>
+</body>
+</html>
